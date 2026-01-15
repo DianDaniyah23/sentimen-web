@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Analisis Sentimen</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">Analisis Sentimen YouTube</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Hi, {{ current_user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <!-- Input Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Analisis Video Baru</h5>
+            </div>
+            <div class="card-body">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('dashboard') }}">
+                    <div class="mb-3">
+                        <label for="youtube_url" class="form-label">Link Video YouTube</label>
+                        <input type="url" class="form-control" id="youtube_url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span id="submit-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                        Ambil Komentar & Analisis
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Conditional block to show results -->
+        {% if results %}
+        <div class="card">
+            <div class="card-header">
+                <h5>Hasil Analisis untuk: <span class="text-muted">{{ video_title }}</span></h5>
+            </div>
+            <div class="card-body">
+                <p>Total Komentar Dianalisis: <strong>{{ comments|length }}</strong></p>
+                
+                <!-- Charts Section -->
+                <div id="sentimentChartsContainer">
+                    <div class="chart-container mb-5">
+                         <canvas id="barChart"></canvas>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 chart-container">
+                             <canvas id="textblobPieChart"></canvas>
+                        </div>
+                        <div class="col-md-4 chart-container">
+                             <canvas id="vaderPieChart"></canvas>
+                        </div>
+                        <div class="col-md-4 chart-container">
+                             <canvas id="naiveBayesPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Section -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Komentar</th>
+                                <th scope="col">TextBlob</th>
+                                <th scope="col">VADER</th>
+                                <th scope="col">Naive Bayes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comment in comments %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td style="width: 50%;">{{ comment.text }}</td>
+                                <td><span class="badge bg-{{ 'success' if comment.textblob_sentiment == 'Positif' else ('danger' if comment.textblob_sentiment == 'Negatif' else 'secondary') }}">{{ comment.textblob_sentiment }}</span></td>
+                                <td><span class="badge bg-{{ 'success' if comment.vader_sentiment == 'Positif' else ('danger' if comment.vader_sentiment == 'Negatif' else 'secondary') }}">{{ comment.vader_sentiment }}</span></td>
+                                <td><span class="badge bg-{{ 'success' if comment.naive_bayes_sentiment == 'Positif' else ('danger' if comment.naive_bayes_sentiment == 'Negatif' else 'secondary') }}">{{ comment.naive_bayes_sentiment }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Chart Logic -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Script untuk menampilkan spinner saat form disubmit
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('submit-spinner').style.display = 'inline-block';
+            document.querySelector('button[type="submit"]').disabled = true;
+        });
+
+        // Jika ada data hasil, gambar grafiknya
+        {% if results %}
+        document.addEventListener('DOMContentLoaded', function () {
+            // Data dari Flask di-pass ke JavaScript
+            const resultsData = {{ results | tojson }};
+            
+            // Buat Pie Charts
+            createPieChart('textblobPieChart', 'TextBlob', resultsData.textblob);
+            createPieChart('vaderPieChart', 'VADER', resultsData.vader);
+            createPieChart('naiveBayesPieChart', 'Naive Bayes', resultsData.naive_bayes);
+
+            // Buat Bar Chart
+            createBarChart('barChart', resultsData);
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

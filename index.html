@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard - SentimenAI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1abc9c;
+            --primary-hover-color: #16a085;
+            --dark-color: #343a40;
+            --background-color: #f8f9fa;
+        }
+        body { background-color: var(--background-color); }
+        .navbar-dark { background-color: var(--dark-color) !important; }
+        .card { 
+            border: none; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        }
+        .card-header { 
+            background-color: #fff; 
+            border-bottom: 1px solid #eeeeee; 
+            border-radius: 15px 15px 0 0 !important; 
+        }
+        .nav-tabs { border-bottom: 1px solid #dee2e6; }
+        .nav-tabs .nav-link { 
+            color: #495057; 
+            font-weight: 500;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tabs .nav-link.active { 
+            color: var(--primary-color); 
+            border-bottom: 3px solid var(--primary-color);
+            background-color: transparent;
+        }
+        .btn-custom {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+            padding: 10px;
+            font-weight: 600;
+        }
+        .btn-custom:hover {
+            background-color: var(--primary-hover-color);
+            border-color: var(--primary-hover-color);
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(26, 188, 156, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <strong>SentimenAI</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">
+                            Halo, <strong>{{ current_user.username }}</strong>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header py-3">
+                        <h4 class="card-title mb-0" style="color: var(--dark-color);">Panel Analisis Sentimen</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="{{ url_for('analyze') }}" method="POST" enctype="multipart/form-data">
+                            
+                            <ul class="nav nav-tabs mb-4" id="inputTypeTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-content" type="button" role="tab">URL YouTube</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-content" type="button" role="tab">Input Teks</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="pdf-tab" data-bs-toggle="tab" data-bs-target="#pdf-content" type="button" role="tab">Upload PDF</button>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content pt-2" id="inputTypeTabContent">
+                                <div class="tab-pane fade show active" id="url-content" role="tabpanel">
+                                    <input type="hidden" name="input_type" value="url">
+                                    <div class="mb-3">
+                                        <label for="video_url" class="form-label">Link Video YouTube</label>
+                                        <input type="url" class="form-control" id="video_url" name="video_url" placeholder="https://www.youtube.com/watch?v=...">
+                                        <div class="form-text">Contoh analisis menggunakan data dummy.</div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="text-content" role="tabpanel">
+                                    <input type="hidden" name="input_type" value="text" disabled>
+                                    <div class="mb-3">
+                                        <label for="raw_text" class="form-label">Salin Teks Di Sini</label>
+                                        <textarea class="form-control" id="raw_text" name="raw_text" rows="5" placeholder="Masukkan opini, komentar, atau ulasan produk..."></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="pdf-content" role="tabpanel">
+                                    <input type="hidden" name="input_type" value="pdf" disabled>
+                                    <div class="mb-3">
+                                        <label for="pdf_file" class="form-label">Unggah File Dokumen (.pdf)</label>
+                                        <input class="form-control" type="file" id="pdf_file" name="pdf_file" accept=".pdf">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-custom btn-lg py-2 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-magic" viewBox="0 0 16 16"><path d="M9.5 2.672a.5.5 0 1 0 1 0V.843a.5.5 0 0 0-1 0v1.829Zm4.5.035A.5.5 0 0 0 13.293 2L12 3.293a.5.5 0 1 0 .707.707L14 3.707a.5.5 0 0 0 0-.707ZM7.293 4L8 3.293a.5.5 0 1 0-.707-.707L6.293 3A.5.5 0 0 0 6 3.707l.993.993a.5.5 0 0 0 .707 0Z M.5 10.672a.5.5 0 1 0 1 0V9.843a.5.5 0 0 0-1 0v.829Zm4.5-.035A.5.5 0 0 0 4.293 10L3 11.293a.5.5 0 1 0 .707.707L5 11.707a.5.5 0 0 0 0-.707ZM11.293 12L12 11.293a.5.5 0 1 0-.707-.707L10.293 11A.5.5 0 0 0 10 11.707l.993.993a.5.5 0 0 0 .707 0Z M4.965 15.696a.5.5 0 0 0 .707 0l.62-.62a.5.5 0 0 0 0-.708l-1.127-1.127a.5.5 0 0 0-.707 0l-.621.62a.5.5 0 0 0 0 .708l1.128 1.127Zm4.93-2.92a.5.5 0 0 0 .707 0l.62-.62a.5.5 0 0 0 0-.708l-1.127-1.127a.5.5 0 0 0-.707 0l-.621.62a.5.5 0 0 0 0 .708l1.128 1.127Z M2.328 6.958a.5.5 0 0 0 .707 0l.62-.62a.5.5 0 0 0 0-.708L2.528 4.502a.5.5 0 0 0-.707 0l-.621.62a.5.5 0 0 0 0 .708l1.128 1.127Zm4.93-2.92a.5.5 0 0 0 .707 0l.62-.62a.5.5 0 0 0 0-.708L6.828 2.202a.5.5 0 0 0-.707 0l-.621.62a.5.5 0 0 0 0 .708l1.128 1.127Z"/></svg>
+                                    Mulai Analisis
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Logika untuk mengaktifkan input_type yang sesuai dengan tab yang dipilih
+        const tabButtons = document.querySelectorAll('#inputTypeTab button');
+        tabButtons.forEach(button => {
+            button.addEventListener('shown.bs.tab', function (event) {
+                document.querySelectorAll('.tab-pane input[type="hidden"]').forEach(input => {
+                    input.disabled = true;
+                });
+                const activeTabPane = document.querySelector(event.target.getAttribute('data-bs-target'));
+                const activeHiddenInput = activeTabPane.querySelector('input[type="hidden"]');
+                activeHiddenInput.removeAttribute('disabled');
+            });
+        });
+    </script>
+</body>
+</html>
